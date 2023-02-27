@@ -4,7 +4,7 @@
 
 ## FEATURES
 
--*Capture de la fenêtre souhaitée, du bureau ou d'une caméra*
--*Choix du micro ainsi que du périphérique de sortie*
--*Choix du chemin d'enregistrement*
--*C'est déjà pas mal jpense*
+- *Capture de la fenêtre souhaitée, du bureau ou d'une caméra*
+- *Choix du micro ainsi que du périphérique de sortie*
+- *Choix du chemin d'enregistrement*
+- *C'est déjà pas mal jpense*
