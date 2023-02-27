@@ -1,6 +1,6 @@
 # OBHESS
 
-**OBHESS, le nouveau logiciel de tes youtubers préférés (nan je déconne).**
+**OBHESS, le nouveau logiciel de tes youtubers préférés (nan je déconne)**
 
 ## FEATURES
 
