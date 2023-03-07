@@ -1,12 +1,33 @@
 .App {
-  text-align: center;
+  background: linear-gradient(180deg, #50D2EA 0%, #28516B 100%);
+  width: 100vw;
+  height: 100vh;
 }
 
 .App-logo {
-  height: 40vmin;
+  height: 15vmin;
   pointer-events: none;
 }
+.App-screen {
+  height:65%
+}
+.App-line {
+  width: 100%;
+  border: 2px solid #FFFFFF;
+}
 
+.App-dropdown {
+  border-radius: 20px;
+  background-color: white;
+  color: black  ;
+}
+
+.App-dropdownWrapper {
+  align-items: center;
+  text-align: center;
+  flex-direction: column;
+  display: flex;
+}
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {
     animation: App-logo-spin infinite 20s linear;
