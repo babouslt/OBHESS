@@ -9,7 +9,10 @@
   pointer-events: none;
 }
 .App-screen {
-  height:65%
+  height:65%;
+  align-items: center;
+  text-align: center;
+  flex-direction: column;
 }
 .App-line {
   width: 100%;
@@ -17,7 +20,7 @@
 }
 
 .App-dropdown {
-  border-radius: 20px;
+  border-radius: 40px;
   background-color: white;
   color: black  ;
 }

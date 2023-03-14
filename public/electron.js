@@ -1,8 +1,8 @@
 // Module to control the application lifecycle and the native browser window.
-const { app, BrowserWindow, protocol } = require("electron");
+const { app, BrowserWindow, protocol, ipcMain } = require("electron");
 const path = require("path");
 const url = require("url");
-const { desktopCapturer } = require('electron')
+const { desktopCapturer, remote } = require('electron')
 
 
 // Create the native browser window.
@@ -90,8 +90,11 @@ app.on("web-contents-created", (event, contents) => {
   });
 });
 
-
-
+ipcMain.on('get-screens', async (event, arg) => {
+  desktopCapturer.getSources({ types: ['window', 'screen'] }).then(async sources => {
+    event.reply('ALL_SOURCES', sources)
+  })
+})
 
 
 // In this file you can include the rest of your app's specific main process
