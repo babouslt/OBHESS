@@ -16,5 +16,23 @@ process.once("loaded", () => {
     removeEventListener: () => {
       ipcRenderer.removeAllListeners('ALL_SOURCES')
     }
+  });
+  contextBridge.exposeInMainWorld("path", {
+    openDialog: () => ipcRenderer.send('open-file-dialog'),
+    getPath: (setState) => ipcRenderer.on('getPath', (event,path) => {
+      setState(path)
+    })
+  })
+  contextBridge.exposeInMainWorld("volume", {
+    getVolumes: () => ipcRenderer.send('get-initial-volume'),
+    storeVolumes: (setState) => ipcRenderer.on('getInitialVolumes', (event,volumes) => {
+      setState(volumes)
+    })
+  })
+  contextBridge.exposeInMainWorld("record", {
+    startRecord: (stream, path) => ipcRenderer.send('start-recording',stream, path),
+    stopRecord: () => ipcRenderer.send('stop-recording'),
+    saveFile: (filepath,blob) => ipcRenderer.send('save-file',filepath,blob)
+    // .then((response) => { console.log(response)}).catch((err)=> {console.log(err)})
   })
 });

@@ -19,6 +19,10 @@
   border: 2px solid #FFFFFF;
 }
 
+.App-options {
+  display: flex;
+}
+
 .App-dropdown {
   border-radius: 40px;
   background-color: white;

@@ -1,15 +1,17 @@
 // Module to control the application lifecycle and the native browser window.
-const { app, BrowserWindow, protocol, ipcMain } = require("electron");
+const { app, BrowserWindow, protocol, ipcMain, ipcRenderer } = require("electron");
 const path = require("path");
 const url = require("url");
-const { desktopCapturer, remote } = require('electron')
+const { desktopCapturer, dialog } = require('electron')
+
 
 
 // Create the native browser window.
 function createWindow() {
   const mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+    // width: 800,
+    // height: 600,
+    fullscreen: true,
     // Set the path of an additional "preload" script that can be used to
     // communicate between node-land and browser-land.
     webPreferences: {
@@ -96,6 +98,73 @@ ipcMain.on('get-screens', async (event, arg) => {
   })
 })
 
+ipcMain.on('open-file-dialog', event => {
+  var path;
+  dialog.showOpenDialog({
+    properties: ['openDirectory'],
+    title :'Select a path',
+    buttonLabel: 'Confirm',
+  }).then(result => {
+    path= result.filePaths
+    event.reply('getPath', path)
+  })
+})
 
+//const volume = require('electron-volume-control');
+
+ipcMain.on('get-initial-volume', event => {
+  const currentMicroVolume = volume.getMicrophoneVolume();
+  const currentSpeakerVolume = volume.getSpeakerVolume();
+  const currentVolumes = {currentMicroVolume,currentSpeakerVolume}
+  event.reply('getInitialVolume', currentVolumes)
+})
+
+ipcMain.on('start-record', event => {
+
+})
+
+ipcMain.on('start-recording', (event,stream, path) => {
+  const chunks = [];
+  const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp9' });
+  const test = new MediaRecorder()
+  mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+  mediaRecorder.onstop = () => {
+    const blob = new Blob(chunks, { type: 'video/webm' });
+    ipcRenderer.send('recording-complete', blob, path);
+  };
+
+  mediaRecorder.start();
+  return mediaRecorder;
+})
+
+ipcMain.on('stop-recording', (event,mediaRecorder) => {
+  mediaRecorder.stop();
+})
+
+
+const fs = require('fs');
+const { TRUE } = require("sass");
+
+ipcMain.on('recording-complete', (event, blob, path) => {
+  const filename = `recorded-video-${Date.now()}.webm`;
+  const filepath = path.join(path, filename);
+  const fileStream = fs.createWriteStream(filepath);
+  fileStream.write(Buffer.from(blob));
+  fileStream.on('finish', () => {
+    console.log(`Video saved to ${filepath}`);
+  });
+});
+
+
+ipcMain.on('save-file', (event,filepath,arrayBuffer) => {
+  console.log(filepath)
+  const blob = Buffer.from(arrayBuffer)
+
+  const fileStream = fs.createWriteStream(filepath);
+      fileStream.write(blob);
+      fileStream.on('finish', () => {
+        console.log(`Video saved to ${filepath}`);
+      });
+})
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.

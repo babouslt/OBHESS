@@ -3,10 +3,16 @@ import logo from './logo_OBHESS.png'
 import Dropdown from './components/dropdown/index'
 import Screens from './components/screens/index'
 import './App.css';
-
-
+const newRecorder = React.createContext(null) 
 
 function App() {
+
+  const [recorder, setRecorder] = useState(null);
+  const [stream, setStream] = useState();
+  const [savePath, setSavePath] = useState("");
+  const [volumes, setVolumes] = useState([]);
+  const [inputVolume, setInputVolume] = useState(50);
+  const [outputVolume, setOutputVolume] = useState(50);
   const refreshRef = React.useRef(null)
   const [screens, setScreens] = useState([]);
   const [selectedScreen, setSelectedScreen] = useState("screen:0:0");
@@ -18,10 +24,40 @@ function App() {
   });
 
 
+/*useEffect(() => {
+  window.volume.getVolumes();
+  window.volume.storeVolumes(setVolumes)
+  setInputVolume(volumes[0])
+  setOutputVolume(volumes[1])
+}, []);*/
+
+//========================================================================================================================
+  const choosePath = () => {
+    window.path.openDialog();
+    window.path.getPath(setSavePath);
+  }
+
+  useEffect(() => {
+    console.log(savePath)
+  }, [savePath])
+//========================================================================================================================
+
+  const handleInputVolumeChange = (event) => {
+    setInputVolume(event.target.value);
+  }
+
+  const handleOutputVolumeChange = (event) => [
+    setOutputVolume(event.target.value)
+  ]
+
+//========================================================================================================================
+
   const getScreens = async () => {
     await window.capture.getScreens()
     window.capture.storeScreens(setScreens)
   }
+
+//========================================================================================================================
 
   useEffect(() => {
     const getDevices = async () => {
@@ -34,6 +70,7 @@ function App() {
     };
     getDevices();
   }, []);
+
 
   useEffect(() => {
     clearInterval(refreshRef.current)
@@ -58,9 +95,50 @@ function App() {
     setSelectedScreen(event.target.value)
   }
 
+  const startRecord = () => { 
+    const _ = require('lodash');
+    const chunks = [];
+    const recorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp9' })
+    newRecorder.Provider = recorder
+    console.log(newRecorder.Provider)
+    newRecorder.Provider.ondataavailable = (e) => chunks.push(e.data);
+
+    newRecorder.Provider.onstop = () => {
+      const blob = new Blob(chunks, { type: 'video/webm' });
+      const filename = `\\recorded-video-${Date.now()}.webm`;
+      
+      const filepath = (savePath + filename)
+      const reader = new FileReader();
+
+      //path.join(savePath,filename);
+      console.log(filepath)
+      console.log(blob)
+      // const cloneBlob = _.cloneDeep(blob)
+      // console.log(cloneBlob)
+      reader.onload = () => {
+        // reader.result contient l'ArrayBuffer
+        window.record.saveFile(filepath,
+          reader.result)
+      };
+      reader.readAsArrayBuffer(blob);
+    
+    };
+    newRecorder.Provider.start();
+  }
+
+  const stopRecord = () => { 
+    newRecorder.Provider.stop();
+  }
+
   useEffect(() => {
     navigator.mediaDevices.getUserMedia({
-      audio: false,
+      audio: {
+        mandatory: {
+          chromeMediaSource: 'desktop',
+          chromeMediaSourceId: selectedDevice.inputDevice
+        }
+      },
+  
       video: {
         mandatory: {
           chromeMediaSource: 'desktop',
@@ -73,12 +151,14 @@ function App() {
       }
     })
     .then(stream => { 
+      setStream(stream)
       const video = document.querySelector('video')
       video.srcObject = stream
       video.onloadedmetadata = (e) => video.play()
     }).catch(err => console.log(err))
 
-  }, [selectedScreen])
+  }, [selectedScreen, selectedDevice])
+
 
   return (
     <div className="App">
@@ -91,11 +171,32 @@ function App() {
       </div>
       
       <div className='App-line'> </div>
-      <div className="App-dropdownWrapper">
-        <Dropdown list={inputAudioDevices} onChange={handleDeviceChange} name="inputDevice"/>
-        <Dropdown list={outputAudioDevices} onChange={handleDeviceChange} name="outputDevice"/>
-        <Screens list={screens} onChange={handleScreenChange} name="screens" />
+      <div className='App-options'>
+        <div className="sliders">
+          <div className="slider">
+            <label>Volume du micro : {inputVolume}% </label>
+            <input type="range" min="0" max="100" value={inputVolume} onChange={handleInputVolumeChange} />
+          </div>
+          <div className="slider">
+            <label>Volume des haut-parleurs : {outputVolume}%</label>
+          <input type="range" min="0" max="100" value={outputVolume} onChange={handleOutputVolumeChange} />
+          </div>
+        </div>
+
+        <div className="App-dropdownWrapper">
+          <Dropdown list={inputAudioDevices} onChange={handleDeviceChange} name="inputDevice"/>
+          <Dropdown list={outputAudioDevices} onChange={handleDeviceChange} name="outputDevice"/>
+          <Screens list={screens} onChange={handleScreenChange} name="screens" />
+        </div>
+        <div>
+        <button id="select" onClick={choosePath}>Select a directory</button>
+        <button id="start" onClick={startRecord}>Start recording</button>
+        <button id="stop" onClick={stopRecord}>Stop recording</button>
+        <p id="selected"></p>
+        </div>
       </div>
+      
+      
     </div>
 
   );
