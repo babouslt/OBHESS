@@ -1,5 +1,5 @@
 // Module to control the application lifecycle and the native browser window.
-const { app, BrowserWindow, protocol, ipcMain, ipcRenderer } = require("electron");
+const { app, BrowserWindow, protocol, ipcMain, ipcRenderer, Notification } = require("electron");
 const path = require("path");
 const url = require("url");
 const { desktopCapturer, dialog } = require('electron')
@@ -93,7 +93,7 @@ app.on("web-contents-created", (event, contents) => {
 });
 
 ipcMain.on('get-screens', async (event, arg) => {
-  desktopCapturer.getSources({ types: ['window', 'screen'] }).then(async sources => {
+  desktopCapturer.getSources({ types: ['window', 'screen', 'camera'] }).then(async sources => {
     event.reply('ALL_SOURCES', sources)
   })
 })
@@ -119,9 +119,6 @@ ipcMain.on('get-initial-volume', event => {
   event.reply('getInitialVolume', currentVolumes)
 })
 
-ipcMain.on('start-record', event => {
-
-})
 
 ipcMain.on('start-recording', (event,stream, path) => {
   const chunks = [];
@@ -143,28 +140,12 @@ ipcMain.on('stop-recording', (event,mediaRecorder) => {
 
 
 const fs = require('fs');
-const { TRUE } = require("sass");
-
-ipcMain.on('recording-complete', (event, blob, path) => {
-  const filename = `recorded-video-${Date.now()}.webm`;
-  const filepath = path.join(path, filename);
-  const fileStream = fs.createWriteStream(filepath);
-  fileStream.write(Buffer.from(blob));
-  fileStream.on('finish', () => {
-    console.log(`Video saved to ${filepath}`);
-  });
-});
-
-
 ipcMain.on('save-file', (event,filepath,arrayBuffer) => {
-  console.log(filepath)
   const blob = Buffer.from(arrayBuffer)
-
   const fileStream = fs.createWriteStream(filepath);
-      fileStream.write(blob);
-      fileStream.on('finish', () => {
-        console.log(`Video saved to ${filepath}`);
-      });
+  fileStream.write(blob);
+  new Notification({title: 'OBHESS', body:'Record done!'}).show()
 })
+
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.

@@ -2,13 +2,18 @@ import React, { useState, useEffect } from 'react';
 import logo from './logo_OBHESS.png'
 import Dropdown from './components/dropdown/index'
 import Screens from './components/screens/index'
+import styled from 'styled-components'
 import './App.css';
 const newRecorder = React.createContext(null) 
 
 function App() {
 
+//Déclaration de toute nos variables
+//========================================================================================================================
   const [recorder, setRecorder] = useState(null);
   const [stream, setStream] = useState();
+  const [micStream, setMicStream] = useState();
+  const [screenStream, setScreenStream] = useState();
   const [savePath, setSavePath] = useState("");
   const [volumes, setVolumes] = useState([]);
   const [inputVolume, setInputVolume] = useState(50);
@@ -31,6 +36,7 @@ function App() {
   setOutputVolume(volumes[1])
 }, []);*/
 
+//Fonctions pour choisir le dossier d'enregistrement
 //========================================================================================================================
   const choosePath = () => {
     window.path.openDialog();
@@ -40,6 +46,8 @@ function App() {
   useEffect(() => {
     console.log(savePath)
   }, [savePath])
+
+//Fonctions pour contrôler le volume (non fonctionnel)
 //========================================================================================================================
 
   const handleInputVolumeChange = (event) => {
@@ -50,6 +58,7 @@ function App() {
     setOutputVolume(event.target.value)
   ]
 
+//Fonction pour récupérer les écrans et applications ouvertes
 //========================================================================================================================
 
   const getScreens = async () => {
@@ -57,6 +66,7 @@ function App() {
     window.capture.storeScreens(setScreens)
   }
 
+//Fonction pour récupérer les différents périphériques audio
 //========================================================================================================================
 
   useEffect(() => {
@@ -71,7 +81,8 @@ function App() {
     getDevices();
   }, []);
 
-
+//Fonction pour raffraichir les écrans détectés tout les x temps
+//========================================================================================================================
   useEffect(() => {
     clearInterval(refreshRef.current)
     window.capture.removeEventListener()
@@ -83,7 +94,8 @@ function App() {
     return () => clearInterval(refreshRef.current)
   }, [])
   
-
+//Fonctions pour choisir les écrans et périphériques audio souhaités
+//========================================================================================================================
   const handleDeviceChange = (event) => {
     setSelectedDevice({
       ...selectedDevice,
@@ -95,28 +107,26 @@ function App() {
     setSelectedScreen(event.target.value)
   }
 
+//Fonctions pour lancer et stopper le record
+//========================================================================================================================
   const startRecord = () => { 
-    const _ = require('lodash');
     const chunks = [];
-    const recorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp9' })
+
+    //Tentative d'assembler pistes audio du bureau et du microphone
+    const combinedStream = new MediaStream();
+    combinedStream.addTrack(screenStream.getVideoTracks()[0]);
+    combinedStream.addTrack(screenStream.getAudioTracks()[0]);
+    combinedStream.addTrack(micStream.getAudioTracks()[0]);
+    const recorder = new MediaRecorder(combinedStream, { mimeType: 'video/webm; codecs=vp9' })
     newRecorder.Provider = recorder
-    console.log(newRecorder.Provider)
     newRecorder.Provider.ondataavailable = (e) => chunks.push(e.data);
 
     newRecorder.Provider.onstop = () => {
       const blob = new Blob(chunks, { type: 'video/webm' });
       const filename = `\\recorded-video-${Date.now()}.webm`;
-      
       const filepath = (savePath + filename)
       const reader = new FileReader();
-
-      //path.join(savePath,filename);
-      console.log(filepath)
-      console.log(blob)
-      // const cloneBlob = _.cloneDeep(blob)
-      // console.log(cloneBlob)
       reader.onload = () => {
-        // reader.result contient l'ArrayBuffer
         window.record.saveFile(filepath,
           reader.result)
       };
@@ -130,101 +140,133 @@ function App() {
     newRecorder.Provider.stop();
   }
 
+//Fonction pour récupérer les flux vidéo et audio
+//========================================================================================================================
   useEffect(() => {
+
+    //Capture du microphone
+    navigator.mediaDevices.getUserMedia({
+      audio: {
+        deviceId: selectedDevice.inputDevice,
+      }
+    })
+    .then(micStream => {
+      setMicStream(micStream)
+    })
+
+    //Capture de la vidéo et du son du bureau
     navigator.mediaDevices.getUserMedia({
       audio: {
         mandatory: {
           chromeMediaSource: 'desktop',
-          chromeMediaSourceId: selectedDevice.inputDevice
-        }
+        }  
       },
-  
       video: {
         mandatory: {
           chromeMediaSource: 'desktop',
           chromeMediaSourceId: selectedScreen,
           minWidth: 1280,
-          maxWidth: 1280,
+          maxWidth: 1920,
           minHeight: 720,
-          maxHeight: 720
+          maxHeight: 1080
         }
       }
     })
-    .then(stream => { 
-      setStream(stream)
+    .then(screenStream => { 
+      setScreenStream(screenStream)
       const video = document.querySelector('video')
-      video.srcObject = stream
+      video.srcObject = screenStream
       video.onloadedmetadata = (e) => video.play()
     }).catch(err => console.log(err))
-
   }, [selectedScreen, selectedDevice])
 
-
   return (
-    <div className="App">
-      <img src={logo} className="App-logo" alt="logo" />
+    <ContainerApp>
       
-      <div className="App-screen">
-      <video  width={900} style={{
-            backgroundColor: 'grey'
-          }} ></video>
-      </div>
+      <Logo src={logo} alt="logo"></Logo>
+
+      <ContainerScreen>
+        <video muted width={1200}></video>
+      </ContainerScreen>
       
-      <div className='App-line'> </div>
-      <div className='App-options'>
-        <div className="sliders">
-          <div className="slider">
+      <ContainerAll>
+        <ContainerLeftRight>
+          <div >
             <label>Volume du micro : {inputVolume}% </label>
             <input type="range" min="0" max="100" value={inputVolume} onChange={handleInputVolumeChange} />
           </div>
-          <div className="slider">
+          <div >
             <label>Volume des haut-parleurs : {outputVolume}%</label>
           <input type="range" min="0" max="100" value={outputVolume} onChange={handleOutputVolumeChange} />
           </div>
-        </div>
+        </ContainerLeftRight>
 
-        <div className="App-dropdownWrapper">
+        <ContainerDropdown>
           <Dropdown list={inputAudioDevices} onChange={handleDeviceChange} name="inputDevice"/>
-          <Dropdown list={outputAudioDevices} onChange={handleDeviceChange} name="outputDevice"/>
           <Screens list={screens} onChange={handleScreenChange} name="screens" />
-        </div>
-        <div>
-        <button id="select" onClick={choosePath}>Select a directory</button>
-        <button id="start" onClick={startRecord}>Start recording</button>
-        <button id="stop" onClick={stopRecord}>Stop recording</button>
-        <p id="selected"></p>
-        </div>
-      </div>
-      
-      
-    </div>
-
+        </ContainerDropdown>
+        
+        <ContainerLeftRight>
+          <Button id="select" onClick={choosePath}> Select a directory </Button>
+          <Button id="start" onClick={startRecord}> Start recording </Button>
+          <Button id="stop" onClick={stopRecord}> Stop recording </Button>
+        </ContainerLeftRight>
+      </ContainerAll>
+    </ContainerApp>
   );
 
 }
 
- 
+const ContainerScreen = styled.div`
+  align-items: center;
+  text-align: center;
+  flex-direction: column;
+`
+const ContainerApp = styled.div`
+  background: linear-gradient(180deg, #50D2EA 0%, #28516B 100%);
+  width: 100vw;
+  height: 100vh;
+`
+const ContainerAll = styled.div`
+  display: flex;
+`
+
+const Logo = styled.img`
+  animation: App-logo-spin infinite 20s linear;
+  height: 15vmin;
+  pointer-events: none;
+`
+const Button = styled.button`
+  background-color: white;
+  color: black;
+  border: none;
+  font-size: 1.2em;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease-in-out; // Ajout de la transition sur la propriété background-color
+
+  &:hover {
+    background-color: #0056b3; // Nouvelle couleur de fond au survol
+  }
+`
+
+const ContainerLeftRight = styled.div`
+  border-top: 4px solid white;
+  width: 25%;
+  align-items: center;
+  text-align: center;
+  padding-left:5px;
+  display: flex;
+  justify-content: space-between;
+`
+const ContainerDropdown = styled.div`
+  border-left: 4px solid white;
+  border-right: 4px solid white;
+  border-top: 4px solid white;
+  width: 50%;
+  align-items: center;
+  text-align: center;
+  flex-direction: column;
+`
 
 export default App;
-
- 
-
-/*<label >Select Audio Input: </label>
-
-      <select className='App-dropdown' id="audio-input-select" value={selectedDevice} onChange={handleDeviceChange}>
-
-        {inputDevices.map(device => (
-
-          <option key={device.deviceId} value={device.deviceId}>
-
-            {device.label || `Microphone ${device.deviceId}`}
-
-          </option>
-
-        ))}
-
-      </select>
-
-      <select value={selectedDevice} onChange={handleDeviceChange}>  </select>
-
-      <Dropdown list={inputDevices} onChange={handleDeviceChange} device={selectedDevice}/> */
