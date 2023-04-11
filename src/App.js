@@ -10,7 +10,8 @@ function App() {
 
 //Déclaration de toute nos variables
 //========================================================================================================================
-  const [recorder, setRecorder] = useState(null);
+  const [isButtonStartClickable, setIsButtonStartClickable] = useState(false);
+  const [isButtonStopClickable, setIsButtonStopClickable] = useState(false);
   const [stream, setStream] = useState();
   const [micStream, setMicStream] = useState();
   const [screenStream, setScreenStream] = useState();
@@ -39,6 +40,8 @@ function App() {
 //Fonctions pour choisir le dossier d'enregistrement
 //========================================================================================================================
   const choosePath = () => {
+    setIsButtonStartClickable(true);
+    setIsButtonStopClickable(false);
     window.path.openDialog();
     window.path.getPath(setSavePath);
   }
@@ -110,6 +113,9 @@ function App() {
 //Fonctions pour lancer et stopper le record
 //========================================================================================================================
   const startRecord = () => { 
+    setIsButtonStartClickable(false);
+    setIsButtonStopClickable(true);
+
     const chunks = [];
 
     //Tentative d'assembler pistes audio du bureau et du microphone
@@ -137,6 +143,8 @@ function App() {
   }
 
   const stopRecord = () => { 
+    setIsButtonStartClickable(true);
+    setIsButtonStopClickable(false);
     newRecorder.Provider.stop();
   }
 
@@ -208,8 +216,8 @@ function App() {
         
         <ContainerLeftRight>
           <Button id="select" onClick={choosePath}> Select a directory </Button>
-          <Button id="start" onClick={startRecord}> Start recording </Button>
-          <Button id="stop" onClick={stopRecord}> Stop recording </Button>
+          <Button id="start" onClick={startRecord} disabled={!isButtonStartClickable}> Start recording </Button>
+          <Button id="stop" onClick={stopRecord} disabled={!isButtonStopClickable}> Stop recording </Button>
         </ContainerLeftRight>
       </ContainerAll>
     </ContainerApp>
@@ -247,6 +255,10 @@ const Button = styled.button`
 
   &:hover {
     background-color: #0056b3; // Nouvelle couleur de fond au survol
+  }
+  &:disabled:hover {
+    cursor: default;
+    opacity: 0.5;
   }
 `
 
