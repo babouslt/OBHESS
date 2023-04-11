@@ -2,7 +2,7 @@
 
 **OBHESS, le nouveau logiciel de tes youtubers préférés (nan je déconne)**
 
-Lien de la vidéo de présentation: https://youtu.be/6Wh2Ej8nzPA
+Lien de la vidéo de présentation: https://youtu.be/6Wh2Ej8nzPA  
 Lien du figma: https://www.figma.com/file/0JJSi62G2HJGbaXmhimxtq/OBHESS?node-id=0%3A1&t=7gYqRSJr3rWxPlmO-1
 ## FEATURES
 
